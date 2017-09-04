@@ -25,6 +25,10 @@ public enum SelectedRowScale: CGFloat {
 public protocol LongPressReorder {
     
     /**
+     Will be called when cell with above index overlapped below index
+    */
+    func overlapepdIndex(aboveIndex: IndexPath, belowIndex: IndexPath)
+    /**
      Will be called when the moving row changes its current position to a new position inside the table.
      
      - Parameter currentIndex: Current position of row inside the table
@@ -69,6 +73,10 @@ open class LongPressReorderTableView {
     /// Controls how much the selected row will "pop out" of the table.
     var selectedRowScale: SelectedRowScale
     
+    private let offsetBeforeSelectRow: CGFloat
+    
+    private let minimumPressDuration: TimeInterval
+    
     /// Helper struct used to track parameters involved in drag and drop of table row
     fileprivate struct DragInfo {
         static var began: Bool = false
@@ -85,9 +93,11 @@ open class LongPressReorderTableView {
      - Parameter tableView: Targeted UITableView
      - Parameter selectedRowScale: defines how big the cell's pop out effect will be
      */
-    public init(_ tableView: UITableView, selectedRowScale: SelectedRowScale = .medium) {
+    public init(_ tableView: UITableView, offsetBeforeSelectRow: CGFloat, minimumPressDuration: TimeInterval = 0.5, selectedRowScale: SelectedRowScale = .medium) {
         self.tableView = tableView
         self.selectedRowScale = selectedRowScale
+        self.offsetBeforeSelectRow = offsetBeforeSelectRow
+        self.minimumPressDuration = minimumPressDuration
     }
     
     // MARK: - Exposed actions
@@ -97,6 +107,7 @@ open class LongPressReorderTableView {
      */
     open func enableLongPressReorder() {
         let longPress = UILongPressGestureRecognizer(target: self, action: #selector(self.longPressGestureRecognized(_:)))
+        longPress.minimumPressDuration = minimumPressDuration
         tableView.addGestureRecognizer(longPress)
     }
     
@@ -106,6 +117,12 @@ open class LongPressReorderTableView {
         let point = gesture.location(in: tableView)
         let indexPath = tableView.indexPathForRow(at: point)
         
+        if let belowIndex = indexPath,
+            let aboveIndex = DragInfo.currentIndexPath {
+            
+            delegate?.overlapepdIndex(aboveIndex:aboveIndex, belowIndex: belowIndex)
+        }
+
         switch gesture.state {
         case .began:
             if let indexPath = indexPath {
@@ -162,12 +179,20 @@ open class LongPressReorderTableView {
             var center = DragInfo.cellSnapshot.center
             center.y = point.y
             DragInfo.cellSnapshot.center = center
+            guard let cell = tableView.cellForRow(at: indexPath) else {
+                return
+            }
             
             if indexPath != DragInfo.currentIndexPath {
-                delegate?.positionChanged(currentIndex: DragInfo.currentIndexPath, newIndex: indexPath)
-                
-                tableView.moveRow(at: DragInfo.currentIndexPath, to: indexPath)
-                DragInfo.currentIndexPath = indexPath
+                if (cell.frame.origin.y > point.y - offsetBeforeSelectRow
+                    && DragInfo.currentIndexPath.row > indexPath.row)
+                    || ((cell.frame.origin.y + cell.frame.size.height) < point.y + offsetBeforeSelectRow
+                    && DragInfo.currentIndexPath.row < indexPath.row) {
+                    delegate?.positionChanged(currentIndex: DragInfo.currentIndexPath, newIndex: indexPath)
+                    
+                    tableView.moveRow(at: DragInfo.currentIndexPath, to: indexPath)
+                    DragInfo.currentIndexPath = indexPath
+                }
             }
             
         default:
@@ -265,5 +290,8 @@ extension UIViewController: LongPressReorder {
      */
     open func allowChangingRow(atIndex indexPath: IndexPath) -> Bool {
         return true
+    }
+    
+    open func overlapepdIndex(aboveIndex: IndexPath, belowIndex: IndexPath) {
     }
 }
