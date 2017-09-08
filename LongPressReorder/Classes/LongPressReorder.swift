@@ -32,7 +32,7 @@ public protocol LongPressReorder {
     /**
      Will be called when cell with above index overlapped below index
      */
-    func overlappedIndex(aboveIndex: IndexPath?, belowIndex: IndexPath?, overlappedHeader: Bool)
+    func overlappedIndex(initialIndexPath: IndexPath?, aboveIndex: IndexPath?, belowIndex: IndexPath?, overlappedHeader: Bool)
     /**
      Will be called when the moving row changes its current position to a new position inside the table.
      
@@ -137,7 +137,7 @@ open class LongPressReorderTableView {
             return rectSection.contains(point)
         }()
         
-        delegate?.overlappedIndex(aboveIndex: DragInfo.currentIndexPath, belowIndex: indexPath, overlappedHeader: isOverlappedHeader)
+        delegate?.overlappedIndex(initialIndexPath: DragInfo.initialIndexPath, aboveIndex: DragInfo.currentIndexPath, belowIndex: indexPath, overlappedHeader: isOverlappedHeader)
         
         switch gesture.state {
         case .began:
@@ -183,7 +183,7 @@ open class LongPressReorderTableView {
             
         case .changed:
             guard DragInfo.began else {
-                    break
+                break
             }
             
             var center = DragInfo.cellSnapshot.center
@@ -235,8 +235,10 @@ open class LongPressReorderTableView {
                     DragInfo.cellMustShow = true
                 }
                 
-                let currentIndexPath = DragInfo.currentIndexPath!
-                let initialIndexPath = DragInfo.initialIndexPath!
+                guard let currentIndexPath = DragInfo.currentIndexPath,
+                    let initialIndexPath = DragInfo.initialIndexPath else {
+                        break
+                }
                 
                 UIView.animate(withDuration: 0.25, animations: {
                     DragInfo.cellSnapshot.center = cell.center
@@ -251,17 +253,25 @@ open class LongPressReorderTableView {
                 })
                 
                 delegate?.reorderFinished(initialIndex: initialIndexPath, finalIndex: currentIndexPath)
-            }
-            
-            if gesture.state == .ended,
-                let belowIndex = indexPath,
-                let aboveIndex = DragInfo.currentIndexPath,
-                belowIndex != aboveIndex {
-                delegate?.gestureEndedOnIndex(aboveIndex:aboveIndex, belowIndex: belowIndex)
-            } else if gesture.state == .ended
-                && isOverlappedHeader,
-                let currentIndexPath = DragInfo.currentIndexPath {
-                delegate?.gestureEndedOnHeaderWith(currentIndexPath)
+                if gesture.state == .ended,
+                    let belowIndex = indexPath,
+                    currentIndexPath != belowIndex {
+                    
+                    guard let indexPath = indexPath else {
+                        return
+                    }
+                    
+                    if (cell.frame.origin.y > point.y - offsetBeforeSelectRow
+                        && DragInfo.currentIndexPath.row > indexPath.row)
+                        || ((cell.frame.origin.y + cell.frame.size.height) < point.y + offsetBeforeSelectRow
+                            && DragInfo.currentIndexPath.row < indexPath.row) {
+                        delegate?.gestureEndedOnIndex(aboveIndex:initialIndexPath, belowIndex: belowIndex)
+                    }
+                } else if gesture.state == .ended
+                    && isOverlappedHeader,
+                    let currentIndexPath = DragInfo.initialIndexPath {
+                    delegate?.gestureEndedOnHeaderWith(currentIndexPath)
+                }
             }
         }
     }
@@ -329,7 +339,7 @@ extension UIViewController: LongPressReorder {
         return true
     }
     
-    open func overlappedIndex(aboveIndex: IndexPath?, belowIndex: IndexPath?, overlappedHeader: Bool) {
+    open func overlappedIndex(initialIndexPath: IndexPath?, aboveIndex: IndexPath?, belowIndex: IndexPath?, overlappedHeader: Bool) {
         
     }
     
