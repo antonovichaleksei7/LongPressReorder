@@ -307,7 +307,7 @@ extension UIViewController: LongPressReorder {
      - Parameter currentIndex: Current position of row inside the table
      - Parameter newIndex: New position of row inside the table
      */
-    open func positionChanged(currentIndex: IndexPath, newIndex: IndexPath) {
+    @objc open func positionChanged(currentIndex: IndexPath, newIndex: IndexPath) {
     }
     
     /**
@@ -316,7 +316,7 @@ extension UIViewController: LongPressReorder {
      - Parameter initialIndex: Initial position of row inside the table, when the long press gesture starts
      - Parameter finalIndex: Final position of row inside the table, when the long press gesture finishes
      */
-    open func reorderFinished(initialIndex: IndexPath, finalIndex: IndexPath) {
+    @objc open func reorderFinished(initialIndex: IndexPath, finalIndex: IndexPath) {
     }
     
     /**
@@ -325,7 +325,7 @@ extension UIViewController: LongPressReorder {
      - Parameter atIndex: Position of row
      - Returns: True to allow selected row to be reordered, false if row should not be moved
      */
-    open func startReorderingRow(atIndex indexPath: IndexPath) -> Bool {
+    @objc open func startReorderingRow(atIndex indexPath: IndexPath) -> Bool {
         if indexPath.row >= 0 {
             return true
         }
@@ -339,19 +339,19 @@ extension UIViewController: LongPressReorder {
      - Parameter atIndex: Position of row that is allowed to be swapped
      - Returns: True to allow row to change its position, false if row is imutable
      */
-    open func allowChangingRow(atIndex indexPath: IndexPath) -> Bool {
+    @objc open func allowChangingRow(atIndex indexPath: IndexPath) -> Bool {
         return true
     }
     
-    open func overlappedIndex(initialIndexPath: IndexPath?, aboveIndex: IndexPath?, belowIndex: IndexPath?, overlappedHeader: Bool) {
+    @objc open func overlappedIndex(initialIndexPath: IndexPath?, aboveIndex: IndexPath?, belowIndex: IndexPath?, overlappedHeader: Bool) {
         
     }
     
-    open func gestureEndedOnIndex(aboveIndex: IndexPath, belowIndex: IndexPath) {
+    @objc open func gestureEndedOnIndex(aboveIndex: IndexPath, belowIndex: IndexPath) {
         
     }
     
-    open func gestureEndedOnHeaderWith(_ indexPath: IndexPath) {
+    @objc open func gestureEndedOnHeaderWith(_ indexPath: IndexPath) {
         
     }
     
