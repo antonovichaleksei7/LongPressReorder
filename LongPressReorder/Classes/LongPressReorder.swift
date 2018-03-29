@@ -209,6 +209,10 @@ open class LongPressReorderTableView {
                 return
             }
             
+            guard DragInfo.currentIndexPath.section == indexPath.section else {
+                return
+            }
+            
             if indexPath != DragInfo.currentIndexPath {
                 if (cell.frame.origin.y > point.y - offsetBeforeSelectRow
                     && DragInfo.currentIndexPath.row > indexPath.row)
